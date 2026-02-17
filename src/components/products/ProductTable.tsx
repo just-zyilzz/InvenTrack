@@ -10,12 +10,13 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ImageOff } from "lucide-react";
 import { useState } from "react";
 
 interface Product {
     id: string;
     name: string;
+    image: string | null;
     sku: string;
     buyPrice: number;
     sellPrice: number;
@@ -54,15 +55,24 @@ export default function ProductTable({ products, onDelete }: ProductTableProps) 
                     products.map((product) => (
                         <div key={product.id} className="bg-card border rounded-lg p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="font-semibold">{product.name}</div>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{product.sku}</code>
-                                        {product.category && (
-                                            <Badge variant="secondary" className="text-[10px] h-5">
-                                                {product.category.name}
-                                            </Badge>
+                                <div className="flex gap-3">
+                                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center border">
+                                        {product.image ? (
+                                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageOff className="h-5 w-5 text-muted-foreground" />
                                         )}
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold">{product.name}</div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{product.sku}</code>
+                                            {product.category && (
+                                                <Badge variant="secondary" className="text-[10px] h-5">
+                                                    {product.category.name}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-1">
@@ -108,6 +118,7 @@ export default function ProductTable({ products, onDelete }: ProductTableProps) 
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-[70px]">Gambar</TableHead>
                             <TableHead>Produk</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead>Kategori</TableHead>
@@ -120,13 +131,22 @@ export default function ProductTable({ products, onDelete }: ProductTableProps) 
                     <TableBody>
                         {products.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                     Belum ada produk
                                 </TableCell>
                             </TableRow>
                         ) : (
                             products.map((product) => (
                                 <TableRow key={product.id}>
+                                    <TableCell>
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center border">
+                                            {product.image ? (
+                                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <ImageOff className="h-4 w-4 text-muted-foreground" />
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="font-medium">{product.name}</TableCell>
                                     <TableCell>
                                         <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{product.sku}</code>

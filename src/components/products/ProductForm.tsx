@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Upload, X } from "lucide-react";
-import Image from "next/image";
 
 interface Category {
     id: string;
@@ -92,6 +91,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
             const json = await res.json();
             if (json.success) {
                 setUploadedImage(json.data.originalPath);
+                setImagePreview(json.data.originalPath);
                 toast({ title: "Gambar berhasil diupload" });
             } else {
                 toast({ title: "Upload gagal", description: json.error, variant: "destructive" });
@@ -198,7 +198,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                         <CardContent>
                             {imagePreview ? (
                                 <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                                     <button
                                         type="button"
                                         onClick={removeImage}

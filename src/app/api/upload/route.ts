@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { optimizeImage } from "@/lib/imageOptimizer";
+import sharp from "sharp";
 
 export async function POST(req: Request) {
     try {
@@ -34,11 +34,24 @@ export async function POST(req: Request) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const result = await optimizeImage(buffer, file.name);
+
+        // Compress with sharp: resize max 800px, convert to WebP, quality 80
+        // Result is sharp but lightweight (~50-150KB)
+        const optimizedBuffer = await sharp(buffer)
+            .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+
+        // Convert to base64 data URL for database storage
+        const base64 = optimizedBuffer.toString("base64");
+        const imageData = `data:image/webp;base64,${base64}`;
 
         return NextResponse.json({
             success: true,
-            data: result,
+            data: {
+                originalPath: imageData,
+                size: optimizedBuffer.length,
+            },
         });
     } catch (error) {
         console.error("Upload error:", error);
