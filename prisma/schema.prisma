@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum TransactionType {
+  SALE
+  PURCHASE
+}
+
+enum DebtType {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum DebtStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(USER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  products     Product[]
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  name             String
+  sku              String            @unique
+  description      String?
+  image            String?
+  buyPrice         Float
+  sellPrice        Float
+  stock            Int               @default(0)
+  minStock         Int               @default(5)
+  unit             String            @default("pcs")
+  categoryId       String?
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  createdById      String
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  transactionItems TransactionItem[]
+
+  @@map("products")
+}
+
+model Transaction {
+  id               String            @id @default(cuid())
+  type             TransactionType
+  totalAmount      Float
+  notes            String?
+  trackingNumber   String?
+  courierCode      String?
+  trackingStatus   String?           @default("pending")
+  trackingData     Json?
+  lastTrackedAt    DateTime?
+  createdById      String
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  items            TransactionItem[]
+  debt             Debt?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  quantity      Int
+  price         Float
+  subtotal      Float
+
+  @@map("transaction_items")
+}
+
+model Debt {
+  id            String      @id @default(cuid())
+  type          DebtType
+  contactName   String
+  contactPhone  String?
+  amount        Float
+  paidAmount    Float       @default(0)
+  dueDate       DateTime?
+  status        DebtStatus  @default(PENDING)
+  notes         String?
+  transactionId String?     @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("debts")
+}
