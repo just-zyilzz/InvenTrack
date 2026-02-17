@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -29,17 +28,39 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginInput) => {
         setError("");
         try {
-            const result = await signIn("credentials", {
-                email: data.email,
-                password: data.password,
-                redirect: false,
+            // 1. Get CSRF token
+            const csrfRes = await fetch("/api/auth/csrf");
+            const { csrfToken } = await csrfRes.json();
+
+            // 2. POST to credentials callback directly
+            // This bypasses the broken new URL() in next-auth/react signIn()
+            const res = await fetch("/api/auth/callback/credentials", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-Auth-Return-Redirect": "1",
+                },
+                body: new URLSearchParams({
+                    csrfToken,
+                    email: data.email,
+                    password: data.password,
+                    callbackUrl: "/dashboard",
+                    json: "true",
+                }),
             });
 
-            if (result?.error) {
-                setError(result.error);
+            const responseData = await res.json();
+
+            if (res.ok) {
+                // Check if the redirect URL contains an error
+                if (responseData.url && responseData.url.includes("error")) {
+                    setError("Email atau password salah.");
+                } else {
+                    router.push("/dashboard");
+                    router.refresh();
+                }
             } else {
-                router.push("/dashboard");
-                router.refresh();
+                setError("Email atau password salah.");
             }
         } catch {
             setError("Terjadi kesalahan. Silakan coba lagi.");

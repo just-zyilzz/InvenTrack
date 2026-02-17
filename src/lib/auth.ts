@@ -15,34 +15,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Email dan password harus diisi");
+                    return null;
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email as string },
-                });
+                try {
+                    const user = await prisma.user.findUnique({
+                        where: { email: credentials.email as string },
+                    });
 
-                if (!user) {
-                    throw new Error("Email tidak terdaftar");
+                    if (!user) {
+                        return null;
+                    }
+
+                    const isPasswordValid = await bcrypt.compare(
+                        credentials.password as string,
+                        user.password
+                    );
+
+                    if (!isPasswordValid) {
+                        return null;
+                    }
+
+                    return {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                    };
+                } catch (error) {
+                    console.error("Auth error:", error);
+                    return null;
                 }
-
-                const isPasswordValid = await bcrypt.compare(
-                    credentials.password as string,
-                    user.password
-                );
-
-                if (!isPasswordValid) {
-                    throw new Error("Password salah");
-                }
-
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                };
             },
         }),
     ],
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost: true,
 });
